@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>四则运算器</title>
+</head>
+
+<body>
+        输入算式：<input type="text" name="string" id="string" autocomplete="off"/>
+        <input type="button" value="计算" id="" onclick="calculate()"/>
+        <p id="result"> </p>
+</body>
+<script>
+    const num=/[0-9]/;
+    const op=/[()/*\-+]/;
+    const spec=/[)/*+.]/;
+    const big=/[/*]/
+    const small=/[+\-]/
+    const fdm=/[(#]/;
+    function preIsBig(char1,char2){
+        var v1,v2;
+        if(big.test(char1))v1=2; if(big.test(char2))v2=2;
+        if(small.test(char1))v1=1; if(small.test(char2))v2=1;
+        if(fdm.test(char1))v1=0; if(fdm.test(char2))v2=0;
+        return v1>v2;
+    }
+    function solve(num1,op,num2){
+        switch(op){
+            case '-':return num1-num2;
+                break;
+            case '+':return num1+num2;
+                break;
+            case '*':return num1*num2;
+                break;
+            case '/':
+                if(num2==0)return '?';
+                return num1/num2;
+                break;
+        }
+    }
+    function calculate(){
+        var q1=[],qq1=[];
+        var q1t=0,q1h=0;
+        var q2=[],qq2=[];
+        var q2t=0,q2h=0;
+        var s=[],ss=1; s[0]='#';
+        var preIsOp=0;
+        var pointExist=0;
+        var st=document.getElementById("string").value;
+        preIsOp=0;st="0+("+st+")+0";
+        for(var i=0;i<st.length;i++){
+            if(preIsOp==0&&spec.test(st.charAt(i))){document.getElementById("result").innerHTML="连续输入符号或两端为运算符"; return 0;}
+            if(preIsOp==1&&st.charAt(i)=='('){document.getElementById("result").innerHTML="左括号前缺少运算符"; return 0;}
+            if(st.charAt(i)=='-'){
+                if(st.charAt(i+1)=='-'){document.getElementById("result").innerHTML="连续输入减号"; return 0;}
+                if(preIsOp==1){qq1[q1h]=1; q1[q1h]='+'; q1h++;}
+                qq1[q1h]=0; q1[q1h]=-1; q1h++; qq1[q1h]=1; q1[q1h]='*'; q1h++; preIsOp=0;
+                continue;
+            }
+            if(num.test(st.charAt(i))){
+                preIsOp=1;
+                pointExist=0;
+                var temp=parseFloat(st.charAt(i)-'0');
+                while((num.test(st.charAt(i+1))||st.charAt(i+1)=='.')&&i<st.length){
+                    i++;
+                    if(st.charAt(i)=='.'){
+                        if(pointExist>0){document.getElementById("result").innerHTML="多个小数点"; return 0;}
+                            else {pointExist=1; continue;}
+                    }
+                    if(pointExist==0)temp=parseFloat(st.charAt(i)-'0')+temp*10;
+                     else {temp+=parseFloat(st.charAt(i)-'0')/Math.pow(10,pointExist); pointExist++;}
+                }
+                q1[q1h]=temp; qq1[q1h]=0; q1h++;
+                continue;
+            }else if(!op.test(st.charAt(i))){document.getElementById("result").innerHTML="非法字符"; return 0;}
+            q1[q1h]=st.charAt(i); qq1[q1h]=1; q1h++; preIsOp=0;
+            if(st.charAt(i)==')')preIsOp=1;
+        }
+        console.log("inputs:"); for(var i=0;q1h>i;i++){console.log(q1[i]);}
+        var sig=0;
+        for(var i=0;i<q1h;i++){
+            if(q1[i]=='(')sig++;
+            if(q1[i]==')')sig--;
+            if(sig<0){document.getElementById("result").innerHTML="括号不匹配"; return 0;}
+        }
+        if(sig>0){document.getElementById("result").innerHTML="括号不匹配"; return 0;}
+        for(;q1h>q1t;q1t++){
+            if(qq1[q1t]==0){q2[q2h]=q1[q1t]; qq2[q2h]=1; q2h++;  continue;}
+            if(q1[q1t]=='('){s[ss]='('; ss++;  continue;}
+            if(q1[q1t]==')'){
+                while(s[ss-1]!='(')q2[q2h++]=s[--ss];
+                ss--;
+                continue;
+            }
+            while(preIsBig(s[ss-1],q1[q1t]))q2[q2h++]=s[--ss];
+            s[ss++]=q1[q1t];
+        }
+        while(s[ss-1]!='#')q2[q2h++]=s[--ss];
+        ss--;
+        for(;q2h>q2t;q2t++){
+            if(qq2[q2t]==1){s[ss++]=q2[q2t]; continue;}
+            var n1=s[--ss]; var n2=s[--ss];
+            var res=solve(n2,q2[q2t],n1);
+            if(res!='?')s[ss++]=res;
+                else{document.getElementById("result").innerHTML="被零除"; return 0;}
+        }
+        document.getElementById("result").innerHTML=String(s[ss-1]);
+}
+</script>
+</html>
